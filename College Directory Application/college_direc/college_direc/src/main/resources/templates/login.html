@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Directory Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        .container.active {
+            display: block;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input {
+            width: 95%;
+            height: 40px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        select, button {
+            width: 100%;
+            height: 40px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button[type="submit"] {
+            background-color: #4CAF50;
+            color: #fff;
+            cursor: pointer;
+        }
+        button[type="submit"]:hover {
+            background-color: #3e8e41;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-container" class="container active">
+        <h2>Login</h2>
+        <form id="login-form" th:action="@{/api/authenticate}" method="post">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username"><br><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password"><br><br>
+            <label for="role">Role:</label>
+            <select id="role" name="role">
+                <option value="STUDENT">Student</option>
+                <option value="FACULTY_MEMBER">Faculty Member</option>
+                <option value="ADMINISTRATOR">Administrator</option>
+            </select><br><br>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div id="student-dashboard" class="container">
+        <h2>Student Dashboard</h2>
+        <div>
+            <h3>Personal Profile</h3>
+            <p>Name: <span id="student-name"></span></p>
+            <p>Department: <span id="student-department"></span></p >
+            <p>Year: <span id="student-year"></span></p>
+        </div>
+        <div>
+            <h3>Courses</h3>
+            <ul id="student-courses-list"></ul>
+        </div>
+    </div>
+
+    <div id="faculty-dashboard" class="container">
+        <h2>Faculty Dashboard</h2>
+        <div>
+            <h3>Personal Profile</h3>
+            <p>Name: <span id="faculty-name"></span></p>
+            <p>Department: <span id="faculty-department"></span></p>
+            <p>Office Hours: <span id="faculty-office-hours"></span></p>
+        </div>
+        <div>
+            <h3>Courses</h3>
+            <ul id="faculty-courses-list"></ul>
+        </div>
+    </div>
+
+    <div id="admin-dashboard" class="container">
+        <h2>Administrator Dashboard</h2>
+        <div>
+            <h3>Personal Profile</h3>
+            <p>Name: <span id="admin-name"></span></p>
+            <p>Department: <span id="admin-department"></span></p>
+        </div>
+        <div>
+            <h3>Students</h3>
+            <ul id="admin-students-list"></ul>
+        </div>
+        <div>
+            <h3>Faculty Members</h3>
+            <ul id="admin-faculty-list"></ul>
+        </div>
+    </div>
+
+	<script th:inline="javascript">
+	    const loginForm = document.getElementById('login-form');
+	    const loginContainer = document.getElementById('login-container');
+	    const studentDashboard = document.getElementById('student-dashboard');
+	    const facultyDashboard = document.getElementById('faculty-dashboard');
+	    const adminDashboard = document.getElementById('admin-dashboard');
+	
+	    loginForm.addEventListener('submit', (e) => {
+	        e.preventDefault();
+	        const username = document.getElementById('username').value;
+	        const password = document.getElementById('password').value;
+	        const role = document.getElementById('role').value;
+	
+	        // Call API to authenticate user
+	        fetch(th:attr="api/authenticate", {
+	            method: 'POST',
+	            headers: {
+	                'Content-Type': 'application/json'
+	            },
+	            body: JSON.stringify({
+	                username,
+	                password,
+	                role
+	            })
+	        })
+	        .then((response) => response.json())
+	        .then((data) => {
+	            if (data.success) {
+	                loginContainer.classList.remove('active');
+	                if (role === 'STUDENT') {
+	                    studentDashboard.classList.add('active');
+	                    fetch(th:attr="api/student-profile")
+	                        .then((response) => response.json())
+	                        .then((data) => {
+	                            document.getElementById('student-name').textContent = data.name;
+	                            document.getElementById('student-department').textContent = data.department;
+	                            document.getElementById('student-year').textContent = data.year;
+	                            data.courses.forEach((course) => {
+	                                const courseListItem = document.createElement('li');
+	                                courseListItem.textContent = course.title;
+	                                document.getElementById('student-courses-list').appendChild(courseListItem);
+	                            });
+	                        })
+	                        .catch((error) => console.error(error));
+	                } else if (role === 'FACULTY_MEMBER') {
+	                    facultyDashboard.classList.add('active');
+	                    fetch(th:attr="api/faculty-profile")
+	                        .then((response) => response.json())
+	                        .then((data) => {
+	                            document.getElementById('faculty-name').textContent = data.name;
+	                            document.getElementById('faculty-department').textContent = data.department;
+	                            document.getElementById('faculty-office-hours').textContent = data.officeHours;
+	                            data.courses.forEach((course) => {
+	                                const courseListItem = document.createElement('li');
+	                                courseListItem.textContent = course.title;
+	                                document.getElementById('faculty-courses-list').appendChild(courseListItem);
+	                            });
+	                        })
+	                        .catch((error) => console.error(error));
+	                } else if (role === 'ADMINISTRATOR') {
+	                    adminDashboard.classList.add('active');
+	                    fetch(th:attr="api/admin-profile")
+	                        .then((response) => response.json())
+	                        .then((data) => {
+	                            document.getElementById('admin-name').textContent = data.name;
+	                            document.getElementById('admin-department').textContent = data.department;
+	                            data.students.forEach((student) => {
+	                                const studentListItem = document.createElement('li');
+	                                studentListItem.textContent = student.name;
+	                                document.getElementById('admin-students-list').appendChild(studentListItem);
+	                            });
+	                            data.faculty .forEach((faculty) => {
+	                                const facultyListItem = document.createElement('li');
+	                                facultyListItem.textContent = faculty.name;
+	                                document.getElementById('admin-faculty-list').appendChild(facultyListItem);
+	                            });
+	                        })
+	                        .catch((error) => console.error(error));
+	                }
+	            } else {
+	                alert('Invalid credentials');
+	            }
+	        })
+	        .catch((error) => console.error(error));
+	    });
+	</script>
+</body>
+</html>
